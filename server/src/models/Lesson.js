@@ -1,19 +1,15 @@
-const mongoose = require('mongoose')
+const { DataTypes } = require('sequelize')
+const { sequelize } = require('../config/db')
 
-const LessonSchema = new mongoose.Schema(
-  {
-    courseId: { type: mongoose.Schema.Types.ObjectId, ref: 'Course', required: true, index: true },
-    sectionId: { type: mongoose.Schema.Types.ObjectId, ref: 'Section', required: true, index: true },
-    title: { type: String, required: true, trim: true },
-    order: { type: Number, required: true, index: true },
-    youtube_url: { type: String, required: true },
-    duration: { type: Number, default: 0 }, // seconds
-  },
-  { timestamps: true }
-)
+const Lesson = sequelize.define('Lesson', {
+  id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
+  course_id: { type: DataTypes.INTEGER, allowNull: false },
+  title: { type: DataTypes.STRING, allowNull: false },
+  video_url: { type: DataTypes.STRING, allowNull: false },
+  duration: { type: DataTypes.INTEGER, defaultValue: 0 },
+  order: { type: DataTypes.INTEGER, defaultValue: 0 } // needed for sorting in UI
+}, {
+  timestamps: false
+})
 
-// Unique lesson within a course by order position
-LessonSchema.index({ courseId: 1, order: 1 }, { unique: true })
-
-module.exports = mongoose.model('Lesson', LessonSchema)
-
+module.exports = Lesson

@@ -1,45 +1,45 @@
 const express = require('express')
-
-const Enrollment = require('../models/Enrollment')
-const Course = require('../models/Course')
-const Lesson = require('../models/Lesson')
-const Progress = require('../models/Progress')
+const { Enrollment, Course, Lesson, Progress } = require('../models')
 const { requireAuth } = require('../middleware/auth')
 
 const router = express.Router()
 
 async function progressSummaryFor(userId, courseId) {
-  const totalLessons = await Lesson.countDocuments({ courseId })
-  const completedLessons = await Progress.countDocuments({
-    user_id: userId,
-    course_id: courseId,
-    status: 'completed',
+  const totalLessons = await Lesson.count({ where: { course_id: courseId } })
+  const completedLessons = await Progress.count({
+    where: {
+      user_id: userId,
+      course_id: courseId,
+      completed: true,
+    }
   })
 
   const percentage = totalLessons ? (completedLessons / totalLessons) * 100 : 0
 
-  const last = await Progress.findOne({
-    user_id: userId,
-    course_id: courseId,
-    status: 'completed',
+  const lastProgress = await Progress.findOne({
+    where: {
+      user_id: userId,
+      course_id: courseId,
+      completed: true,
+    },
+    order: [['updatedAt', 'DESC']],
+    attributes: ['lesson_id']
   })
-    .sort({ completed_at: -1 })
-    .select('lesson_id completed_at')
-    .lean()
 
-  const completedLessonIds = await Progress.find({
-    user_id: userId,
-    course_id: courseId,
-    status: 'completed',
+  const completedRecords = await Progress.findAll({
+    where: {
+      user_id: userId,
+      course_id: courseId,
+      completed: true,
+    },
+    attributes: ['lesson_id']
   })
-    .select('lesson_id')
-    .lean()
 
-  const lessonIdList = completedLessonIds.map((p) => String(p.lesson_id))
-  const lastWatchedLesson = last?.lesson_id ? String(last.lesson_id) : null
+  const lessonIdList = completedRecords.map((p) => String(p.lesson_id))
+  const lastWatchedLesson = lastProgress?.lesson_id ? String(lastProgress.lesson_id) : null
 
   return {
-    percentage,
+    percentage: Math.round(percentage),
     completedLessons,
     totalLessons,
     lastWatchedLesson,
@@ -52,46 +52,38 @@ router.post('/', requireAuth, async (req, res) => {
     const { courseId } = req.body || {}
     if (!courseId) return res.status(400).json({ message: 'courseId is required' })
 
-    const course = await Course.findById(courseId).lean()
+    const course = await Course.findByPk(courseId)
     if (!course) return res.status(404).json({ message: 'Course not found' })
 
-    const existing = await Enrollment.findOne({ user_id: req.user.id, course_id: courseId })
-    if (existing) {
-      return res.status(200).json({ enrollment: existing })
-    }
-
-    const enrollment = await Enrollment.create({
-      user_id: req.user.id,
-      course_id: courseId,
-      enrollment_date: new Date(),
+    const [enrollment, created] = await Enrollment.findOrCreate({
+      where: { user_id: req.user.id, course_id: courseId }
     })
+
+    if (!created) {
+      return res.status(200).json({ enrollment })
+    }
 
     return res.status(201).json({ enrollment })
   } catch (err) {
+    console.error(err)
     return res.status(500).json({ message: 'Enrollment failed' })
   }
 })
 
 router.get('/me', requireAuth, async (req, res) => {
   try {
-    const enrollments = await Enrollment.find({ user_id: req.user.id })
-      .sort({ enrollment_date: -1 })
-      .lean()
-
-    const courseIds = enrollments.map((e) => e.course_id)
-    const courses = await Course.find({ _id: { $in: courseIds } })
-      .select('_id title description thumbnail category instructorId')
-      .lean()
-
-    const courseById = new Map(courses.map((c) => [String(c._id), c]))
+    const enrollments = await Enrollment.findAll({
+      where: { user_id: req.user.id },
+      order: [['enrollment_date', 'DESC']],
+      include: [{ model: Course, as: 'course' }]
+    })
 
     const items = await Promise.all(
       enrollments.map(async (e) => {
-        const course = courseById.get(String(e.course_id))
-        if (!course) return null
+        if (!e.course) return null
         const summary = await progressSummaryFor(req.user.id, e.course_id)
         return {
-          course: { id: course._id, ...course },
+          course: { id: e.course.id, title: e.course.title, description: e.course.description, thumbnail: e.course.thumbnail, category: e.course.category, instructorName: e.course.instructorName },
           enrollment_date: e.enrollment_date,
           progress: summary,
         }
@@ -100,9 +92,10 @@ router.get('/me', requireAuth, async (req, res) => {
 
     return res.json({ enrollments: items.filter(Boolean) })
   } catch (err) {
+    console.error(err)
     return res.status(500).json({ message: 'Failed to fetch enrollments' })
   }
 })
 
-module.exports = router
-
+// Used extensively in progress checks as backwards compat wrapper so let's export it secretly for refactoring
+module.exports = Object.assign(router, { progressSummaryFor })

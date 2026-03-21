@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useContext, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import api from '../api/axios'
 import CourseCard from '../components/CourseCard'
 import { CourseCatalogSkeleton } from '../components/Skeletons'
 import { useToasts } from '../components/ToastProvider'
 import { BookOpen, Filter, SlidersHorizontal } from 'lucide-react'
+import { AuthContext } from '../auth/AuthContext'
 
 const CATEGORIES_FILTER = ['All', 'Programming', 'AI & ML', 'Web Dev', 'Data Science', 'DevOps', 'Cybersecurity']
 
@@ -14,6 +15,8 @@ export default function Home() {
   const [searchParams] = useSearchParams()
 
   const [courses, setCourses] = useState([])
+  const [enrolledIds, setEnrolledIds] = useState([])
+  const { user } = useContext(AuthContext)
   const [loading, setLoading] = useState(true)
   const [activeCategory, setActiveCategory] = useState('All')
 
@@ -26,6 +29,17 @@ export default function Home() {
       .catch(() => pushToast('error', 'Failed to load courses'))
       .finally(() => setLoading(false))
   }, [pushToast])
+
+  useEffect(() => {
+    if (!user) return
+    api
+      .get('/api/enrollments/me')
+      .then((res) => {
+        const ids = (res.data.enrollments || []).map(e => String(e.course.id))
+        setEnrolledIds(ids)
+      })
+      .catch(() => {})
+  }, [user])
 
   const filtered = useMemo(() => {
     let list = courses
@@ -168,7 +182,12 @@ export default function Home() {
             gap: 24,
           }}>
             {filtered.map((course) => (
-              <CourseCard key={course.id} course={course} onEnroll={onEnroll} />
+              <CourseCard 
+                key={course.id} 
+                course={course} 
+                onEnroll={onEnroll} 
+                isEnrolled={enrolledIds.includes(String(course.id))} 
+              />
             ))}
           </div>
         )}

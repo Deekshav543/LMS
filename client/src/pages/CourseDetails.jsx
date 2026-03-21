@@ -124,12 +124,12 @@ export default function CourseDetails() {
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 20, marginBottom: 24 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'rgba(255,255,255,0.7)', fontSize: 14 }}>
                 <Star size={16} fill="#f59e0b" stroke="none" />
-                <span style={{ color: '#f59e0b', fontWeight: 700 }}>4.8</span>
+                <span style={{ color: '#f59e0b', fontWeight: 700 }}>{Number(course.rating || 4.5).toFixed(1)}</span>
                 <span>(12,450 ratings)</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'rgba(255,255,255,0.7)', fontSize: 14 }}>
                 <Users size={16} />
-                <span>32,100 students</span>
+                <span>{course.students || '12,450'} students</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'rgba(255,255,255,0.7)', fontSize: 14 }}>
                 <BookOpen size={16} />
@@ -184,7 +184,7 @@ export default function CourseDetails() {
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
               <div style={{ fontFamily: 'var(--font-heading)', fontSize: 28, fontWeight: 800, color: 'var(--text-primary)' }}>
-                ₹999
+                {course.price || '₹999'}
               </div>
               <button
                 type="button"

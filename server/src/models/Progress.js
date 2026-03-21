@@ -1,17 +1,14 @@
-const mongoose = require('mongoose')
+const { DataTypes } = require('sequelize')
+const { sequelize } = require('../config/db')
 
-const ProgressSchema = new mongoose.Schema(
-  {
-    user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
-    course_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Course', required: true, index: true },
-    lesson_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Lesson', required: true, index: true },
-    status: { type: String, enum: ['completed'], default: 'completed' },
-    completed_at: { type: Date, default: Date.now },
-  },
-  { timestamps: true }
-)
+const Progress = sequelize.define('Progress', {
+  id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
+  user_id: { type: DataTypes.INTEGER, allowNull: false },
+  lesson_id: { type: DataTypes.INTEGER, allowNull: false },
+  course_id: { type: DataTypes.INTEGER, allowNull: false }, // added to summary tracking
+  completed: { type: DataTypes.BOOLEAN, defaultValue: false }
+}, {
+  timestamps: true
+})
 
-ProgressSchema.index({ user_id: 1, course_id: 1, lesson_id: 1 }, { unique: true })
-
-module.exports = mongoose.model('Progress', ProgressSchema)
-
+module.exports = Progress

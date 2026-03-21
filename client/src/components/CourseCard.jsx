@@ -1,20 +1,12 @@
 import { Star, Clock, Users } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
-const PRICES = ['₹499', '₹799', '₹999', '₹1,299', '₹1,599', '₹599']
-const RATINGS = [4.5, 4.6, 4.7, 4.8, 4.9, 5.0]
-const STUDENTS = ['12,450', '8,230', '34,100', '5,890', '21,300', '15,600']
-
-function pseudoRandom(id, arr) {
-  const n = typeof id === 'number' ? id : parseInt(String(id), 10) || 0
-  return arr[n % arr.length]
-}
-
-export default function CourseCard({ course, onEnroll }) {
+export default function CourseCard({ course, onEnroll, isEnrolled }) {
   const navigate = useNavigate()
-  const rating = pseudoRandom(course.id, RATINGS)
-  const price = pseudoRandom(course.id, PRICES)
-  const students = pseudoRandom(course.id, STUDENTS)
+  
+  const rating = Number(course.rating) || 4.5
+  const price = course.price || '₹499'
+  const students = course.students || '12,450'
 
   return (
     <div
@@ -102,14 +94,25 @@ export default function CourseCard({ course, onEnroll }) {
             >
               Details
             </button>
-            <button
-              type="button"
-              onClick={() => onEnroll(course.id)}
-              className="btn-primary"
-              style={{ padding: '7px 14px', fontSize: 12 }}
-            >
-              Enroll
-            </button>
+            {isEnrolled ? (
+              <button
+                type="button"
+                onClick={() => navigate(`/course/${course.id}`)}
+                className="btn-primary"
+                style={{ padding: '7px 14px', fontSize: 12, background: 'var(--bg-success, #059669)' }}
+              >
+                Let's Go
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => onEnroll(course.id)}
+                className="btn-primary"
+                style={{ padding: '7px 14px', fontSize: 12 }}
+              >
+                Enroll
+              </button>
+            )}
           </div>
         </div>
       </div>

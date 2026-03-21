@@ -1,30 +1,28 @@
-const mongoose = require('mongoose')
-const dns = require('dns')
+const { Sequelize } = require('sequelize')
+require('dotenv').config()
+
+const sequelize = new Sequelize(process.env.MYSQL_URI, {
+  dialect: 'mysql',
+  logging: false,
+  dialectOptions: {
+    ssl: {
+      require: true,
+      rejectUnauthorized: false // Required for Aiven if you don't supply the CA certificate explicitly
+    }
+  }
+})
 
 async function connectDB() {
-  const uri = process.env.MONGO_URI
-  if (!uri) {
-    throw new Error('MONGO_URI is not set')
+  try {
+    await sequelize.authenticate()
+    console.log('[db] MySQL connected')
+    
+    // Auto-sync for dev
+    await sequelize.sync({ alter: true })
+    console.log('[db] Database synced')
+  } catch (err) {
+    console.error('[db] MySQL connection error:', err)
   }
-
-  // Some environments block Node's default DNS resolver (SRV lookup fails with ECONNREFUSED).
-  // Setting public resolvers fixes `mongodb+srv://` connectivity.
-  if (uri.startsWith('mongodb+srv://')) {
-    dns.setServers(['8.8.8.8', '1.1.1.1'])
-  }
-
-  mongoose.set('strictQuery', true)
-  mongoose.connection.on('connected', () => {
-    // eslint-disable-next-line no-console
-    console.log('[db] connected')
-  })
-  mongoose.connection.on('error', (err) => {
-    // eslint-disable-next-line no-console
-    console.error('[db] error', err)
-  })
-
-  await mongoose.connect(uri)
 }
 
-module.exports = { connectDB }
-
+module.exports = { sequelize, connectDB }
