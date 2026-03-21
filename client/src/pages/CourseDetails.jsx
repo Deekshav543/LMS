@@ -26,7 +26,7 @@ export default function CourseDetails() {
 
   useEffect(() => {
     api
-      .get(`/api/courses/${courseId}`)
+      .get(`/courses/${courseId}`)
       .then((res) => setCourse(res.data.course))
       .catch(() => pushToast('error', 'Failed to load course'))
       .finally(() => setLoading(false))
@@ -35,7 +35,7 @@ export default function CourseDetails() {
   useEffect(() => {
     if (!user) return
     api
-      .get('/api/enrollments/me')
+      .get('/enrollments/me')
       .then((res) => {
         const ids = (res.data.enrollments || []).map((e) => String(e.course.id))
         setEnrolled(ids.includes(String(courseId)))
@@ -45,7 +45,7 @@ export default function CourseDetails() {
 
   const onEnroll = async () => {
     try {
-      await api.post('/api/enrollments', { courseId })
+      await api.post('/enrollments', { courseId })
       pushToast('success', 'Enrolled! Start your learning journey now.')
       setEnrolled(true)
     } catch (err) {

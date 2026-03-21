@@ -1,6 +1,5 @@
-/* eslint-disable react-refresh/only-export-components */
 import { createContext, useEffect, useMemo, useState } from 'react'
-import api, { setAuthToken } from '../api/axios'
+import api from '../api/axios'
 
 export const AuthContext = createContext(null)
 
@@ -15,27 +14,40 @@ export function AuthProvider({ children }) {
       user,
       token,
       login: async ({ email, password }) => {
-        const res = await api.post('/api/auth/login', { email, password })
-        setToken(res.data.token)
-        localStorage.setItem('token', res.data.token)
-        setAuthToken(res.data.token)
-        setUser(res.data.user)
-        return res.data.user
+        try {
+          const res = await api.post('/auth/login', { email, password })
+          setToken(res.data.token)
+          localStorage.setItem('token', res.data.token)
+          setUser(res.data.user)
+          return res.data.user
+        } catch (err) {
+          console.error('[auth] Login failed', err)
+          throw err
+        }
       },
       signup: async ({ name, email, password }) => {
-        const res = await api.post('/api/auth/signup', { name, email, password })
-        return res.data.user
+        try {
+          const res = await api.post('/auth/signup', { name, email, password })
+          return res.data.user
+        } catch (err) {
+          console.error('[auth] Signup failed', err)
+          throw err
+        }
       },
       logout: () => {
         localStorage.removeItem('token')
         setToken('')
-        setAuthToken('')
         setUser(null)
       },
       refreshMe: async () => {
-        const res = await api.get('/api/auth/me')
-        setUser(res.data.user)
-        return res.data.user
+        try {
+          const res = await api.get('/auth/me')
+          setUser(res.data.user)
+          return res.data.user
+        } catch (err) {
+          console.error('[auth] refreshMe failed', err)
+          throw err
+        }
       },
     }),
     [user, token]
@@ -44,17 +56,21 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const stored = localStorage.getItem('token')
     if (stored) {
-      setAuthToken(stored)
       api
-        .get('/api/auth/me')
-        .then((res) => setUser(res.data.user))
-        .catch(() => {
+        .get('/auth/me')
+        .then((res) => {
+           setUser(res.data.user)
+           setLoading(false)
+        })
+        .catch((err) => {
+          console.error('[auth] initialization failed', err)
           localStorage.removeItem('token')
           setUser(null)
           setToken('')
-          setAuthToken('')
+          setLoading(false)
         })
-        .finally(() => setLoading(false))
+    } else {
+      setLoading(false)
     }
   }, [])
 
@@ -64,4 +80,5 @@ export function AuthProvider({ children }) {
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
+
 

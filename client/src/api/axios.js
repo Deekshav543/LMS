@@ -1,16 +1,22 @@
 import axios from 'axios'
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'https://your-backend-url.onrender.com',
+  baseURL: 'https://lms-ho73.onrender.com/api',
+  withCredentials: true,
 })
 
-export function setAuthToken(token) {
-  if (token) {
-    api.defaults.headers.common.Authorization = `Bearer ${token}`
-  } else {
-    delete api.defaults.headers.common.Authorization
+// Centralized interceptor to handle JWT authorization header on all outgoing requests
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token')
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+    return config
+  },
+  (error) => {
+    return Promise.reject(error)
   }
-}
+)
 
 export default api
-
