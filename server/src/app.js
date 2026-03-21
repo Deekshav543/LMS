@@ -3,7 +3,7 @@ const cors = require('cors')
 const helmet = require('helmet')
 const morgan = require('morgan')
 
-const authRoutes = require('./routes/authRoutes')
+const authRoutes = require('./routes/auth')
 const coursesRoutes = require('./routes/coursesRoutes')
 const enrollmentsRoutes = require('./routes/enrollmentsRoutes')
 const lessonsRoutes = require('./routes/lessonsRoutes')
@@ -12,7 +12,23 @@ const progressRoutes = require('./routes/progressRoutes')
 function createApp() {
   const app = express()
 
-  app.use(cors())
+  const allowedOrigins = [
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'https://your-vercel-app.vercel.app'
+  ]
+
+  app.use(cors({
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true)
+      } else {
+        callback(new Error('Not allowed by CORS'))
+      }
+    },
+    credentials: true,
+  }))
+
   app.use(helmet())
   app.use(morgan('dev'))
   app.use(express.json({ limit: '2mb' }))

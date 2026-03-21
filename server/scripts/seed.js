@@ -1,9 +1,8 @@
-const dotenv = require('dotenv')
-dotenv.config()
+const dotenv = require('dotenv');
+dotenv.config();
 
-const bcrypt = require('bcryptjs')
-const { sequelize } = require('../src/config/db')
-const { User, Course, Lesson, Enrollment, Progress } = require('../src/models')
+const bcrypt = require('bcryptjs');
+const mysql = require('mysql2/promise');
 
 const coursesData = [
   {
@@ -12,10 +11,9 @@ const coursesData = [
     thumbnail: 'https://placehold.co/600x340/3b0764/ffffff.png?text=Python+Programming',
     category: 'Programming',
     instructor: 'Dr. Ankit Sharma',
-    price: '₹999',
+    price: '999',
     rating: 4.8,
     students: '12,450',
-    image: 'https://placehold.co/600x340/3b0764/ffffff.png?text=Python+Programming',
     lessons: [
       { title: 'Introduction to Python', video_url: 'https://www.youtube.com/embed/_uQrJ0TkZlc', duration: 15 * 60 },
       { title: 'Variables and Data Types', video_url: 'https://www.youtube.com/embed/kqtD5dpn9C8', duration: 20 * 60 },
@@ -30,10 +28,9 @@ const coursesData = [
     thumbnail: 'https://placehold.co/600x340/1e3a8a/ffffff.png?text=Java+Programming',
     category: 'Programming',
     instructor: 'Priya Verma',
-    price: '₹1,299',
+    price: '1299',
     rating: 4.6,
     students: '8,230',
-    image: 'https://placehold.co/600x340/1e3a8a/ffffff.png?text=Java+Programming',
     lessons: [
       { title: 'Introduction to Java', video_url: 'https://www.youtube.com/embed/grEKMHGYyns', duration: 12 * 60 },
       { title: 'Variables and Operators', video_url: 'https://www.youtube.com/embed/eIrMbAQSU34', duration: 18 * 60 },
@@ -46,10 +43,9 @@ const coursesData = [
     thumbnail: 'https://placehold.co/600x340/065f46/ffffff.png?text=Machine+Learning',
     category: 'AI & ML',
     instructor: 'Rohan Gupta',
-    price: '₹1,599',
+    price: '1599',
     rating: 4.9,
     students: '34,100',
-    image: 'https://placehold.co/600x340/065f46/ffffff.png?text=Machine+Learning',
     lessons: [
       { title: 'What is Machine Learning', video_url: 'https://www.youtube.com/embed/ukzFI9rgwfU', duration: 10 * 60 },
       { title: 'Supervised vs Unsupervised', video_url: 'https://www.youtube.com/embed/7eh4d6sabA0', duration: 22 * 60 },
@@ -62,10 +58,9 @@ const coursesData = [
     thumbnail: 'https://placehold.co/600x340/9d174d/ffffff.png?text=Web+Development',
     category: 'Web Dev',
     instructor: 'Simran Kaur',
-    price: '₹799',
+    price: '799',
     rating: 4.7,
     students: '21,300',
-    image: 'https://placehold.co/600x340/9d174d/ffffff.png?text=Web+Development',
     lessons: [
       { title: 'HTML5 Basics', video_url: 'https://www.youtube.com/embed/pQN-pnXPaVg', duration: 20 * 60 },
       { title: 'CSS3 & Flexbox', video_url: 'https://www.youtube.com/embed/JJSoEo8JSnc', duration: 25 * 60 },
@@ -79,10 +74,9 @@ const coursesData = [
     thumbnail: 'https://placehold.co/600x340/ca8a04/ffffff.png?text=Data+Science',
     category: 'Data Science',
     instructor: 'Amit Desai',
-    price: '₹499',
+    price: '499',
     rating: 4.5,
     students: '5,890',
-    image: 'https://placehold.co/600x340/ca8a04/ffffff.png?text=Data+Science',
     lessons: [
       { title: 'Introduction to Data Science', video_url: 'https://www.youtube.com/embed/X3paOmcrTjQ', duration: 15 * 60 },
       { title: 'NumPy Arrays', video_url: 'https://www.youtube.com/embed/QUT1VHiLmmI', duration: 30 * 60 },
@@ -95,10 +89,9 @@ const coursesData = [
     thumbnail: 'https://placehold.co/600x340/3f6212/ffffff.png?text=DevOps',
     category: 'DevOps',
     instructor: 'Neha Reddy',
-    price: '₹599',
+    price: '599',
     rating: 4.8,
     students: '15,600',
-    image: 'https://placehold.co/600x340/3f6212/ffffff.png?text=DevOps',
     lessons: [
       { title: 'What is DevOps', video_url: 'https://www.youtube.com/embed/_I94-tJlovg', duration: 10 * 60 },
       { title: 'Docker Containers', video_url: 'https://www.youtube.com/embed/3c-iBn73dDE', duration: 25 * 60 },
@@ -111,82 +104,153 @@ const coursesData = [
     thumbnail: 'https://placehold.co/600x340/831843/ffffff.png?text=Cybersecurity',
     category: 'Cybersecurity',
     instructor: 'Vikram Singh',
-    price: '₹999',
+    price: '999',
     rating: 5.0,
     students: '42,000',
-    image: 'https://placehold.co/600x340/831843/ffffff.png?text=Cybersecurity',
     lessons: [
       { title: 'Introduction to Cybersecurity', video_url: 'https://www.youtube.com/embed/inWWhr5tnEA', duration: 12 * 60 },
       { title: 'Network Security Basics', video_url: 'https://www.youtube.com/embed/qiQR5rTSshw', duration: 24 * 60 },
       { title: 'Common Web Vulnerabilities', video_url: 'https://www.youtube.com/embed/ciNHn38EyRc', duration: 35 * 60 },
     ]
   }
-]
+];
 
 async function seed() {
-  await sequelize.authenticate()
-  await sequelize.sync({ force: true })
+  const pool = mysql.createPool({
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    port: process.env.DB_PORT || 26715,
+    ssl: { rejectUnauthorized: false }
+  });
 
-  console.log('[db] tables synced')
+  const connection = await pool.getConnection();
 
-  const adminPasswordHash = await bcrypt.hash('Admin123!', 10)
-  const studentPasswordHash = await bcrypt.hash('Student123!', 10)
-
-  // We no longer strictly need an admin for UI as instructor strings are hardcoded on courses, but keeping it for auth
-  await User.create({
-    name: 'Admin Instructor',
-    email: 'admin@example.com',
-    password: adminPasswordHash,
-    role: 'admin',
-  })
-
-  const student = await User.create({
-    name: 'Student Learner',
-    email: 'student@example.com',
-    password: studentPasswordHash,
-    role: 'student',
-  })
-
-  for (const cData of coursesData) {
-    const totalDuration = cData.lessons.reduce((acc, curr) => acc + curr.duration, 0)
+  try {
+    console.log('[seed] Cleaning up tables...');
+    await connection.query('SET FOREIGN_KEY_CHECKS = 0');
     
-    const course = await Course.create({
-      title: cData.title,
-      description: cData.description,
-      thumbnail: cData.thumbnail,
-      image: cData.image,
-      category: cData.category,
-      instructor: cData.instructor,
-      instructorName: cData.instructor, // backwards compatibility
-      price: cData.price,
-      rating: cData.rating,
-      students: cData.students,
-      duration: totalDuration,
-      lessons: cData.lessons.length
-    })
-
-    let order = 1
-    for (const lData of cData.lessons) {
-      await Lesson.create({
-        course_id: course.id,
-        title: lData.title,
-        video_url: lData.video_url,
-        duration: lData.duration,
-        order: order++
-      })
+    // Explicitly drop both PascalCase and lowercase variations
+    const tablesToDrop = [
+      'progress', 'Progress', 'Progresses',
+      'enrollments', 'Enrollments',
+      'lessons', 'Lessons',
+      'courses', 'Courses',
+      'users', 'Users', 'KodUser', 'UserToken', 'Transactions'
+    ];
+    
+    for (const t of tablesToDrop) {
+      await connection.query('DROP TABLE IF EXISTS ' + t);
     }
+
+    await connection.query('SET FOREIGN_KEY_CHECKS = 1');
+
+    console.log('[seed] Creating tables...');
+    await connection.query(`
+      CREATE TABLE users (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(100),
+        email VARCHAR(100) UNIQUE,
+        password VARCHAR(255),
+        role VARCHAR(50) DEFAULT 'student',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    await connection.query(`
+      CREATE TABLE courses (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        title VARCHAR(255),
+        description TEXT,
+        thumbnail VARCHAR(500),
+        image VARCHAR(500),
+        category VARCHAR(100),
+        instructor VARCHAR(255),
+        instructorName VARCHAR(255),
+        price VARCHAR(50),
+        rating FLOAT,
+        students VARCHAR(100),
+        duration INT,
+        lessons INT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    await connection.query(`
+      CREATE TABLE lessons (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        course_id INT,
+        title VARCHAR(255),
+        video_url VARCHAR(500),
+        duration INT,
+        \`order\` INT,
+        FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
+      )
+    `);
+
+    await connection.query(`
+      CREATE TABLE enrollments (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT,
+        course_id INT,
+        enrollment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
+      )
+    `);
+
+    await connection.query(`
+      CREATE TABLE progress (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT,
+        course_id INT,
+        lesson_id INT,
+        completed TINYINT(1) DEFAULT 0,
+        updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
+        FOREIGN KEY (lesson_id) REFERENCES lessons(id) ON DELETE CASCADE
+      )
+    `);
+
+    console.log('[seed] Inserting users...');
+    const adminHash = await bcrypt.hash('Admin123!', 10);
+    const studentHash = await bcrypt.hash('Student123!', 10);
+    
+    await connection.query('INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)', ['Admin Instructor', 'admin@example.com', adminHash, 'admin']);
+    await connection.query('INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)', ['Student Learner', 'student@example.com', studentHash, 'student']);
+
+    console.log('[seed] Inserting courses and lessons...');
+    for (const c of coursesData) {
+      const totalDuration = c.lessons.reduce((acc, curr) => acc + curr.duration, 0);
+      const [res] = await connection.query(
+        'INSERT INTO courses (title, description, thumbnail, image, category, instructor, instructorName, price, rating, students, duration, lessons) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [c.title, c.description, c.thumbnail, c.thumbnail, c.category, c.instructor, c.instructor, '₹' + c.price, c.rating, c.students, totalDuration, c.lessons.length]
+      );
+      const courseId = res.insertId;
+
+      let order = 1;
+      for (const l of c.lessons) {
+        await connection.query(
+          'INSERT INTO lessons (course_id, title, video_url, duration, \`order\`) VALUES (?, ?, ?, ?, ?)',
+          [courseId, l.title, l.video_url, l.duration, order++]
+        );
+      }
+    }
+
+    console.log('[seed] Seed complete!');
+    await connection.release();
+    await pool.end();
+    process.exit(0);
+  } catch (err) {
+    console.error('[seed] Error:', err);
+    if (connection) {
+       await connection.release();
+       await pool.end();
+    }
+    process.exit(1);
   }
-
-  console.log('Seed complete!')
-  console.log('Admin login:', { email: 'admin@example.com', password: 'Admin123!' })
-  console.log('Student login:', { email: 'student@example.com', password: 'Student123!' })
-
-  await sequelize.close()
 }
 
-seed()
-  .then(() => process.exit(0))
-  .catch((err) => {
-    console.error(err)
-    process.exit(1)
-  })
+seed();
