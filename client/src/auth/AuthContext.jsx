@@ -15,7 +15,7 @@ export function AuthProvider({ children }) {
       token,
       login: async ({ email, password }) => {
         try {
-          const res = await api.post('/auth/login', { email, password })
+          const res = await api.post('auth/login', { email, password })
           setToken(res.data.token)
           localStorage.setItem('token', res.data.token)
           setUser(res.data.user)
@@ -27,7 +27,7 @@ export function AuthProvider({ children }) {
       },
       signup: async ({ name, email, password }) => {
         try {
-          const res = await api.post('/auth/signup', { name, email, password })
+          const res = await api.post('auth/signup', { name, email, password })
           return res.data.user
         } catch (err) {
           console.error('[auth] Signup failed', err)
@@ -41,7 +41,7 @@ export function AuthProvider({ children }) {
       },
       refreshMe: async () => {
         try {
-          const res = await api.get('/auth/me')
+          const res = await api.get('auth/me')
           setUser(res.data.user)
           return res.data.user
         } catch (err) {
@@ -57,7 +57,7 @@ export function AuthProvider({ children }) {
     const stored = localStorage.getItem('token')
     if (stored) {
       api
-        .get('/auth/me')
+        .get('auth/me')
         .then((res) => {
            setUser(res.data.user)
            setLoading(false)

@@ -37,6 +37,10 @@ function createApp() {
     res.json({ ok: true })
   })
 
+  app.get('/api/test', (req, res) => {
+    res.json({ message: 'API working' })
+  })
+
   app.use('/api/auth', authRoutes)
   app.use('/api/courses', coursesRoutes)
   app.use('/api/enrollments', enrollmentsRoutes)

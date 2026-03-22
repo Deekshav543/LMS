@@ -16,7 +16,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     api
-      .get('/enrollments/me')
+      .get('enrollments/me')
       .then((res) => setItems(res.data.enrollments || []))
       .catch(() => pushToast('error', 'Failed to load dashboard'))
       .finally(() => setLoading(false))

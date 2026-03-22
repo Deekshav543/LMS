@@ -69,8 +69,8 @@ export default function CoursePlayer({ courseId }) {
     if (!user) return
     setLoading(true)
     Promise.all([
-      api.get(`/courses/${courseId}/lessons`),
-      api.get(`/progress/summary?courseId=${encodeURIComponent(courseId)}`),
+      api.get(`courses/${courseId}/lessons`),
+      api.get(`progress/summary?courseId=${encodeURIComponent(courseId)}`),
     ])
       .then(([lessonRes, progressRes]) => {
         const fetchedLessons = lessonRes.data.lessons || []
@@ -98,7 +98,7 @@ export default function CoursePlayer({ courseId }) {
     if (!lessonIdToResolve) return
     setResolving(true)
     try {
-      const res = await api.post('/lessons/youtube-url', { lessonId: lessonIdToResolve })
+      const res = await api.post('lessons/youtube-url', { lessonId: lessonIdToResolve })
       setResolvedYoutubeUrl(res.data.youtubeUrl || res.data.youtube_url)
     } catch (err) {
       pushToast('error', err?.response?.data?.message || 'Failed to load video')
@@ -121,10 +121,10 @@ export default function CoursePlayer({ courseId }) {
     if (!user || !activeLessonId || !courseId || isCompleted || completing) return
     setCompleting(true)
     try {
-      await api.post('/progress/complete', { userId: user.id, courseId, lessonId: activeLessonId })
+      await api.post('progress/complete', { userId: user.id, courseId, lessonId: activeLessonId })
       pushToast('success', '✅ Marked as complete!')
 
-      const summaryRes = await api.get(`/progress/summary?courseId=${encodeURIComponent(courseId)}`)
+      const summaryRes = await api.get(`progress/summary?courseId=${encodeURIComponent(courseId)}`)
       const newProgress = summaryRes.data.progress
       setProgress(newProgress)
 

@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 const api = axios.create({
-  baseURL: 'https://lms-ho73.onrender.com/api',
+  baseURL: 'https://lms-ho73.onrender.com/api/',
   withCredentials: true,
 })
 
