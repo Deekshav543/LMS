@@ -54,6 +54,9 @@ export function AuthProvider({ children }) {
   )
 
   useEffect(() => {
+    // Wake up the Render backend immediately on app load (Cold Start Fix)
+    api.get('health').catch(() => {})
+
     const stored = localStorage.getItem('token')
     if (stored) {
       api
