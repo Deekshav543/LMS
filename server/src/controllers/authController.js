@@ -17,7 +17,7 @@ exports.signup = async (req, res) => {
       return res.status(409).json({ message: 'Email already in use' });
     }
 
-    const passwordHash = await bcrypt.hash(password, 8);
+    const passwordHash = await bcrypt.hash(password, 4);
     
     // Insert user
     const [result] = await pool.query(
