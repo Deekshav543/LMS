@@ -3,7 +3,7 @@ const cors = require('cors')
 const helmet = require('helmet')
 const morgan = require('morgan')
 
-const authRoutes = require('./routes/auth')
+const authRoutes = require('./routes/authRoutes')
 const coursesRoutes = require('./routes/coursesRoutes')
 const enrollmentsRoutes = require('./routes/enrollmentsRoutes')
 const lessonsRoutes = require('./routes/lessonsRoutes')
