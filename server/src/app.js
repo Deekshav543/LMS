@@ -34,6 +34,10 @@ function createApp() {
   app.use(morgan('dev'))
   app.use(express.json({ limit: '2mb' }))
 
+  app.get('/', (req, res) => {
+    res.json({ message: 'LMS Backend is live' })
+  })
+
   app.get('/api/health', (req, res) => {
     res.json({ ok: true })
   })
