@@ -15,6 +15,7 @@ function createApp() {
   const allowedOrigins = [
     'http://localhost:5173',
     'http://localhost:3000',
+    'https://lms-orpin-zeta.vercel.app',
     process.env.CORS_ORIGIN
   ].filter(Boolean)
 
