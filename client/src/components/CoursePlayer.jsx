@@ -130,8 +130,8 @@ export default function CoursePlayer({ courseId }) {
 
       const nextId = getNextLessonId({
         lessons,
-        completedLessonIds: newProgress.completedLessonIds || [],
-        lastWatchedLessonId: newProgress.lastWatchedLesson || activeLessonId,
+        completedLessonIds: newProgress?.completedLessonIds || [],
+        lastWatchedLessonId: newProgress?.lastWatchedLesson || activeLessonId,
       })
       if (nextId && String(nextId) !== String(activeLessonId)) {
         setActiveLessonId(nextId)

@@ -24,7 +24,39 @@ router.post('/complete', requireAuth, async (req, res) => {
       );
     }
 
-    return res.json({ ok: true, message: 'Lesson marked as complete' });
+    // After marking complete, fetch and return the updated progress summary
+    const [totalRows] = await pool.query('SELECT COUNT(id) AS totalLessons FROM lessons WHERE course_id = ?', [courseId]);
+    const totalLessons = totalRows[0].totalLessons || 0;
+
+    const [completedRows] = await pool.query(
+      'SELECT COUNT(id) AS completedLessons FROM progress WHERE user_id = ? AND course_id = ? AND completed = 1',
+      [req.user.id, courseId]
+    );
+    const completedLessons = completedRows[0].completedLessons || 0;
+
+    const percentage = totalLessons ? (completedLessons / totalLessons) * 100 : 0;
+
+    const [lastWatchedRows] = await pool.query(
+      'SELECT lesson_id FROM progress WHERE user_id = ? AND course_id = ? AND completed = 1 ORDER BY updatedAt DESC LIMIT 1',
+      [req.user.id, courseId]
+    );
+
+    const [completedIdsRows] = await pool.query(
+      'SELECT lesson_id FROM progress WHERE user_id = ? AND course_id = ? AND completed = 1',
+      [req.user.id, courseId]
+    );
+
+    return res.json({
+      ok: true,
+      message: 'Lesson marked as complete',
+      progress: {
+        percentage: Math.round(percentage),
+        completedLessons,
+        totalLessons,
+        lastWatchedLesson: lastWatchedRows[0]?.lesson_id ? String(lastWatchedRows[0].lesson_id) : null,
+        completedLessonIds: completedIdsRows.map((p) => String(p.lesson_id)),
+      },
+    });
   } catch (err) {
     console.error('[progress] complete error:', err);
     return res.status(500).json({ message: 'Failed to update progress' });
@@ -58,7 +90,7 @@ router.get('/summary', requireAuth, async (req, res) => {
     );
 
     return res.json({
-      summary: {
+      progress: {
         percentage: Math.round(percentage),
         completedLessons,
         totalLessons,
